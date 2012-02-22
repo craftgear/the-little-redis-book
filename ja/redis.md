@@ -5,101 +5,120 @@
 \clearpage
 \changepage{}{}{}{0.5cm}{}{-2cm}{}{}{}
 
-## About This Book
+## この本について
 
-### License
+### ライセンス
 
-The Little Redis Book is licensed under the Attribution-NonCommercial 3.0 Unported license. You should not have paid for this book.
+The Little Redis Book は the Attribution-NonCommercial 3.0 Unported license の元でライセンスされます｡この本にお金を払う必要はなく､またそうすべきではありません｡
 
-You are free to copy, distribute, modify or display the book. However, I ask that you always attribute the book to me, Karl Seguin, and do not use it for commercial purposes.
+複製､配布､修正､提示は自由に行えますが､この本の著者が私 Karl Seguin であることを常に明らかにしてくれるようお願いします｡また､この本を商用利用してはいけません｡
 
-You can see the *full text* of **the license at**:
+**ライセンス**の*全文*は以下で読むことが出来ます｡
 
 <http://creativecommons.org/licenses/by-nc/3.0/legalcode>
 
-### About The Author
+### 著者について
 
-Karl Seguin is a developer with experience across various fields and technologies. He's an active contributor to Open-Source Software projects, a technical writer and an occasional speaker. He's written various articles, as well as a few tools, about Redis. Redis powers the ranking and statistics of his free service for casual game developers: [mogade.com](http://mogade.com/).
+Karl Seguin は様々な分野と技術に長けた開発者です｡オープンソースプロジェクトの活発な貢献者であり､技術記事の著者であり､時に講演者でもあります｡彼はRedisの他にもいくつかのツールについて様々な記事を書いています｡
+Redisは彼のカジュアルゲーム開発者向けの3つのサービス: [mogade.com](http://mogade.com/)でランキングや統計にその力を発揮しています｡
 
-Karl wrote [The Little MongoDB Book](http://openmymind.net/2011/3/28/The-Little-MongoDB-Book/), the free and popular book about MongoDB.
+Karl は [The Little MongoDB Book](http://openmymind.net/2011/3/28/The-Little-MongoDB-Book/) という本も書きました｡この本はMongoDBについて書かれており､フリーで人気があります｡
 
-His blog can be found at <http://openmymind.net> and he tweets via [@karlseguin](http://twitter.com/karlseguin)
+彼のブログは <http://openmymind.net> で､ Twitterアカウントは [@karlseguin](http://twitter.com/karlseguin)
+ です
 
-### With Thanks To
+### 謝辞
 
-A special thanks to [Perry Neal](https://twitter.com/perryneal) for lending me his eyes, mind and passion. You provided me with invaluable help. Thank you.
+目と心と情熱で私を助けてくれた [Perry Neal](https://twitter.com/perryneal) に特別な感謝を捧げます｡貴方の助けはかけがえなのないものでした､ありがとう｡
 
-### Latest Version
+### 最新版
 
-The latest source of this book is available at:
+この本の最新版は以下から入手できます｡
 <http://github.com/karlseguin/the-little-redis-book>
 
 \clearpage
 
-## Introduction
+## はじめに
 
-Over the last couple years, the techniques and tools used for persisting and querying data have grown at an incredible pace. While it's safe to say that relational databases aren't going anywhere, we can also say that the ecosystem around data is never going to be the same.
+過去何年かに渡って､データ永続化と問い合わせの技術やテクニックは信じがたいペースで成長してきました｡
+RDBではどうにもならないところに来ているというのは確実なところですが､一方でデータを取り巻くエコシステムはその限界を超えていくだろうとも言えるでしょう｡(訳者注：訳文意味不明瞭､原文を以下に残す)
+While it's safe to say that relational databases aren't going anywhere, we can also say that the ecosystem around data is never going to be the same.
 
-Of all the new tools and solutions, for me, Redis has been the most exciting. Why? First because it's unbelievably easy to learn. Hours is the right unit to use when talking about length of time it takes to get comfortable with Redis. Secondly, it solves a specific set of problems while at the same time being quite generic. What exactly does that mean? Redis doesn't try to be all things to all data. As you get to know Redis, it'll become increasingly evident what does and what does not belong in it. And when it does, as a developer, it's a great experience.
+あらゆる新しいツールやソリューションの中で､Redisは私にとってもっともエキサイティングです｡その理由の第一は､信じがたいほどに簡単に学べるということです｡Redisに慣れるのにかかる時間といえば数時間といったところでしょう｡第二に､Redisは特定の問題を解決すると同時にかなり一般的であるということです｡つまりどういうことかというと､Redisはあらゆるデータに対して何でもかんでもやろうとしません｡Redisを知るにつれ､何がRedisに適していて､何がそうでないか､徐々にはっきりしていくでしょう｡そして全てが明らかになった時､開発者にとってそれは素晴らしい体験です｡
 
-While you can build a complete system using Redis only, I think most people will find that it supplements their more generic data solution - whether that be a traditional relational database, a document-oriented system, or something else. It's the kind of solution you use to implement specific features. In that way, it's similar to an indexing engine. You wouldn't build your entire application on Lucene. But when you need good search, it's a much better experience - for both you and your users. Of course, the similarities between Redis and indexing engines end there.
+Redisだけを使って全てのシステムを作ることは出来ますが､ほとんどの人はRedisを伝統的なRDBやドキュメント指向データベースといった一般的なデータソリューションの補助と見るだろうと思います｡
+Redisは特定の機能を実現するための手段です｡その意味で､インデックスエンジンに似ています｡アプリケーションをLuceneだけで作ったりはしないでしょう｡しかし強力な検索が必要なら､ユーザにとっても開発者にとってもより良い選択です｡もちろんRedisとインデックスエンジンで似ているところといえばそれだけですが｡
 
-The goal of this book is to build the foundation you'll need to master Redis. We'll focus on learning Redis' five data structures and look at various data modeling approaches. We'll also touch on some key administrative details and debugging techniques.
+この本の目的はRedisを使いこなすための基礎を学ぶことです｡Redisの5つのデータ構造に焦点を当てて､様々なデータモデリングアプローチを検討します｡また同時にいくつかの主な管理とデバッグの方法にも触れます｡
 
-## Getting Started
+## さあ､はじめよう
 
-We all learn differently: some like to get their hands dirty, some like to watch videos, and some like to read. Nothing will help you understand Redis more than actually experiencing it. Redis is easy to install and comes with a simple shell that'll give us everything we need. Let's take a couple minutes and get it up and running on our machine.
+我々は皆異なった学び方をします｡ある人は手を動かすことを好み､またある人はビデオを見ることを好み､さらにある人は読むことを好みます｡
+Redisを理解するのには実際に触ってみるのが一番です｡Redisのインストールは簡単で､必要なことは全部できる対話環境が使えます｡ここで少し時間をとって自分のマシンでRedisを動かしてみましょう｡
 
-### On Windows
+### Windows環境
 
-Redis doesn't officially support Windows, but there are options available. You wouldn't run these in production, but I've never experienced any limitations while doing development.
+Redisは公式にはWindowsをサポートしていません｡しかしいくつか方法があります｡これらのやり方を実運用環境で使いたいとは思わないでしょうが､個人的には開発環境で制限に出くわしたことはありません｡
 
-First head over to <https://github.com/dmajkic/redis/downloads> and download the most up to date version (which should be at the top of the list).
+ます､ここ <https://github.com/dmajkic/redis/downloads> にいって､最新のバージョンをダウンロードしてください
+(リストの一番上にあるのがそうです)
 
-Extract the zip file and, based on your architecture, open either the `64bit` or `32bit` folder.
+zipファイルを解凍し､32bitか64bitのうち適切な方のフォルダを開きます｡
 
-### On *nix and MacOSX
+### *nix環境とMacOSX環境
 
-For *nix and and Mac users, building it from source is your best option. The instructions, along with the latest version number, are available at <http://redis.io/download>. At the time of this writing the latest version is 2.4.6; to install this version we would execute:
+*nixとMacユーザにとってはソースからビルドするのが最善の方法でしょう｡
+ビルド方法はその最新のバージョン番号と共に <http://redis.io/download> で手に入ります｡
+この稿を書いている時点での最新版は2.4.6です｡
+このバージョンをインストールするには以下のようにします｡
 
 	wget http://redis.googlecode.com/files/redis-2.4.6.tar.gz
 	tar xzf redis-2.4.6.tar.gz
 	cd redis-2.4.6
 	make
 
-(Alternatively, Redis is available via various package managers. For example, MacOSX users with Homebrew installed can simply type `brew install redis`.)
+(別の方法として､Redisはパッケージマネージャ経由でインストールすることも出来ます｡例えばMacOSユーザは `brew install redis` と打つことでインストールできます)
 
-If you built it from source, the binary outputs have been placed in the `src` directory. Navigate to the `src` directory by executing `cd src`.
+ソースからビルドした場合は､コンパイルされたバイナリは `src` ディレクトリに置かれます｡ `src` ディレクトリに移動するには `cd src` を実行します｡
 
-### Running and Connecting to Redis
+### Redisを起動し､接続する
 
-If everything worked, the Redis binaries should be available at your fingertips. Redis has a handful of executables. We'll focus on the Redis server and the Redis command line interface (a DOS-like client). Let's start the server. In Windows, double click `redis-server`. On *nix/MacOSX run `./redis-server`.
+全てが上手くいったら､redisバイナリが利用可能になっているはずです｡Redisは便利な実行ファイルを持っています｡
+それらのうち､RedisサーバとRedisコマンドラインインターフェイスに焦点を当てます｡
+まずサーバを実行しましょう｡Windowsでは `redis-server` をダブルクリック､ *nixかMacOSXでは `./redis-server` を実行です｡
 
-If you read the start up message you'll see a warning that the `redis.conf` file couldn't be found. Redis will instead use built-in defaults, which is fine for what we'll be doing.
+スタートアップメッセージを読むと､ `redis.conf` ファイルが見つからないという警告が出ているのに気がつくと思います｡Redisはデフォルト設定で起動しています｡これからの演習にはデフォルト設定で十分です｡
 
-Next start the Redis console by either double clicking `redis-cli` (Windows) or running `./redis-cli` (*nix/MacOSX). This will connect to the locally-running server on the default port (6379).
+次にRedisコンソールを立ち上げます｡Windowsでは `redis-cli` をダブルクリック､*nix/MacOSXでは `./redis-cli`を実行です｡これでローカルで実行されているサーバにポート6379でつながります｡
 
-You can test that everything is working by entering `info` into the command line interface. You'll hopefully see a bunch of key-value pairs which provide a great deal of insight into the server's status.
+コマンドラインに `info` と入力することでRedisがきちんと動いているかどうか確かめることが出来ます｡
+正常に動いていればサーバの稼働状況を示す大量のキーと値のペを目にすることでしょう｡
 
-If you are having problems with the above setup I suggest you seek help in the [official Redis support group](https://groups.google.com/forum/#!forum/redis-db).
+ここまででなにか問題があれば [公式Redisサポートグループ](https://groups.google.com/forum/#!forum/redis-db)　で助けを求めることをお勧めします｡
 
 ## Redis Drivers
 
-As you'll soon learn, Redis' API is best described as an explicit set of functions. It has a very simple and procedural feel to it. This means that whether you are using the command line tool, or a driver for your favorite language, things are very similar. Therefore, you shouldn't have any problems following along if you prefer to work from a programming language. If you want, head over to the [client page](http://redis.io/clients) and download the appropriate driver.
-
+これから見ていくように､RedisのAPIは関数の集合として表現されます｡
+APIは非常に単純で順序だっており､これはつまり､コマンドラインツールを使おうが､好みの言語のドライバを使おうが､やることはほとんど同じだということです｡
+したがって以降の内容を好みのプログラミング言語で実行しても何ら問題はないでしょう｡
+もし必要があれば [client page](http://redis.io/clients) へ行ってドライバをダウンロードしてください｡
 \clearpage
 
-## Chapter 1 - The Basics
+## Chapter 1 - 基本
 
-What makes Redis special? What types of problems does it solve? What should developers watch out for when using it? Before we can answer any of these questions, we need to understand what Redis is.
+なにがRedisを際立たせているのでしょうか？Redisはどんなタイプの問題を解決するのでしょうか？Redisを使う際に開発者が気をつけるべきことは何でしょうか？これらの質問に答える前に､まずRedisとはなにかを理解しなければなりません｡
 
-Redis is often described as an in-memory persistent key-value store. I don't think that's an accurate description. Redis does hold all the data in memory (more on this in a bit), and it does write that out to disk for persistence, but it's much more than a simple key-value store. It's important to step beyond this misconception otherwise your perspective of Redis and the problems it solves will be too narrow.
+Redisは良くインメモリ パーシスタント キーバリューストアと表現されます｡私はこれはあまり正確な表現だとは思いません｡Redisは全てのデータをメモリ上に持ち(これについては後ほど詳しく触れます)､そのデータを永続化のためにディスクに書きだします｡しかし､Redisは単なるキーバリューストア以上の存在です｡この誤解から離れることは重要です｡さもなければRedisの役割や解決できる問題はごく少ないものになってしまうでしょう｡
 
-The reality is that Redis exposes five different data structures, only one of which is a typical key-value structure. Understanding these five data structures, how they work, what methods they expose and what you can model with them is the key to understanding Redis. First though, let's wrap our heads around what it means to expose data structures.
+実際にはRedisは5つの異なったデータ構造を提供しており､それらのうち一つだけが､典型的なキーバリューストア構造です｡5つのデータ構造と､それらがどのように動き､どんなメソッドを提供し､データモデリングにどう使えるかを理解することがRedisを理解する鍵です｡しかしまず初めにデータ構造について思いを巡らせてみましょう｡
 
-If we were to apply this data structure concept to the relational world, we could say that databases expose a single data structure - tables. Tables are both complex and flexible. There isn't much you can't model, store or manipulate with tables. However, their generic nature isn't without drawbacks. Specifically, not everything is as simple, or as fast, as it ought to be. What if, rather than having a one-size-fits-all structure, we used more specialized structures? There might be some things we can't do (or at least, can't do very well), but surely we'd gain in simplicity and speed?
+データ構造の考え方をリレーショナルデータベースにあてはめると､データベースは一つのデータ構造だけを提供します｡それはテーブルです｡テーブルは行と列からなり､柔軟です｡モデルを作ったり､格納したり､データを操作したりとテーブルについてできないことはほとんどありません｡しかし欠点もあります｡それは､何もかもが単純ではなく､速くもない､ということです｡本来はそうあるべきなのに｡もし一つのデータ構造で何でもかんでもやろうとするのではなく､より特化した構造が使えたとしたらどうでしょう？確かにやれないこともでてくるでしょうが､単純さと速さを得ることができるのではないでしょうか？
 
-Using specific data structures for specific problems? Isn't that how we code? You don't use a hashtable for every piece of data, nor do you use a scalar variable. To me, that defines Redis' approach. If you are dealing with scalars, lists, hashes, or sets, why not store them as scalars, lists, hashes and sets? Why should checking for the existence of a value be any more complex than calling `exists(key)` or slower than O(1) (constant time lookup which won't slow down regardless of how many items there are)?
+ある問題に適したデータ構造を使うというのは我々がプログラムを書くときにやっていることではないでしょうか？
+ハッシュテーブルやスカラー変数をあらゆるデータに使ったりはしないでしょう｡Redisのやり方というのはそういう事です｡
+スカラーやリストやハッシュや集合を扱うなら､それをそのまま保存すればいいのではないでしょうか？
+どうして値の存在を確認するために `exists(key)` 以上の複雑なことをしなければならないのでしょう？
+あるいは O(1)(項目数に関わらず一定の時間で検索できること)以上の時間のかかることをしなければいけないのでしょう？
 
 ## The Building Blocks
 
