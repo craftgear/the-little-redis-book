@@ -120,55 +120,92 @@ Redisは良くインメモリ パーシスタント キーバリューストア�
 どうして値の存在を確認するために `exists(key)` 以上の複雑なことをしなければならないのでしょう？
 あるいは O(1)(項目数に関わらず一定の時間で検索できること)以上の時間のかかることをしなければいけないのでしょう？
 
-## The Building Blocks
+## ブロックを積み上げる
 
-### Databases
+### データベース
 
-Redis has the same basic concept of a database that you are already familiar with. A database contains a set of data. The typical use-case for a database is to group all of an application's data together and to keep it separate from another application's.
+Redisは既にあなたにとって馴染みのあるデータベースの概念と同じ基本的な考え方を持っています｡
+データベースはデータの集合を保持します｡データベースの典型的な利用例はアプリケーションのデータをひとまとめにして他のアプリケーションから分離することです｡
 
-In Redis, databases are simply identified by a number with the default database being number `0`. If you want to change to a different database you can do so via the `select` command. In the command line interface, type `select 1`. Redis should reply with an `OK` message and your prompt should change to something like `redis 127.0.0.1:6379[1]>`. If you want to switch back to the default database, just enter `select 0` in the command line interface..
+Redisにおいては､データベースは単なる数字で認識されます｡デフォルトのデータベースは `0` です｡別のデータベースに変更したいなら､`select`コマンドで変更できます｡コマンドラインインターフェイスで `select 1` と入力してみましょう｡Redisが `OK` メッセージを返し､プロンプトが `redis 127.0.0.1:6379[1]` のように変わるはずです｡デフォルトのデータベースに戻りたければ､コマンドラインインターフェイスで `select 0` と入力してください｡
 
-### Commands, Keys and Values
+### コマンドとキーと値
 
-While Redis is more than just a key-value store, at its core, every one of Redis' five data structures has at least a key and a value. It's imperative that we understand keys and values before moving on to other available pieces of information.
+Redisは単なるキーバリューストア以上の存在ですが､本質的にはRedisの5つのデータ構造は全てキーと値を持ちます｡
+より深く学ぶ前に､まずキーと値について理解することが必要です｡
 
-Keys are how you identify pieces of data. We'll be dealing with keys a lot, but for now, it's good enough to know that a key might look like `users:leto`. One could reasonably expect such a key to contain information about a user named `leto`. The colon doesn't have any special meaning, as far as Redis is concerned, but using a separator is a common approach people use to organize their keys.
+キーはデータを識別する方法です｡キーについては後ほど十分に取り扱いますので､今のところはキーが `users:leto` のような見た目をしていると知っていれば十分です｡このようなキーが `leto` という名前のユーザについての情報を格納しているということは容易に推測できるでしょう｡
+Redisにとってコロンは何ら特別な意味を持ちません｡しかしキーの構成にセパレータを用いることは一般的です｡
 
-Values represent the actual data associated with the key. They can be anything. Sometimes you'll store strings, sometimes integers, sometimes you'll store serialized objects (in JSON, XML or some other format). For the most part, Redis treats values as a byte array and doesn't care what they are. Note that different drivers handle serialization differently (some leave it up to you) so in this book we'll only talk about string, integer and JSON.
+値はキーに関連付けられた実際のデータのことです｡
+値はどんな形でも構いません｡
+文字列を入れることもあれば､整数を入れることもあり､また時にはシリアライズされたオブジェクトのこともあるでしょう(JSONとかXMLとか)｡
+大抵の場合､Redisは値を単なるバイト列として取り扱い､中身には頓着しません｡しかし､ドライバによっては知り荒いぜーションの取り扱いに差異があることには注意してください｡
+この本では文字列と整数とJSONだけを取り扱うことにします｡
 
-Let's get our hands a little dirty. Enter the following command:
+すこし手を動かしましょう､次のコマンドを入力してください：
 
 	set users:leto "{name: leto, planet: dune, likes: [spice]}"
 
-This is the basic anatomy of a Redis command. First we have the actual command, in this case `set`. Next we have its parameters. The `set` command takes two parameters: the key we are setting and the value we are setting it to. Many, but not all, commands take a key (and when they do, it's often the first parameter). Can you guess how to retrieve this value? Hopefully you said (but don't worry if you weren't sure!):
+これがRedisのコマンドの基本です｡まずコマンドを指定します､次に上の例では`set`です｡次に引数がきます｡
+`set`コマンドは2つの引数を取ります｡
+これから設定しようとするキーと､キーに設定する値です｡
+全てではありませんがほとんどの場合コマンドはキーを引数に取り､その場合たいていキーが最初にきます｡
+今設定した値を取り出すにはどうすればいいかわかりますか？
+お分かりだと思いますが､わからなくても心配ありません｡
 
 	get users:leto
 
-Go ahead and play with some other combinations. Keys and values are fundamental concepts, and the `get` and `set` commands are the simplest way to play with them. Create more users, try different types of keys, try different values.
+他の組み合わせも試してみてください｡キーと値は基本となる概念です｡
+そして`get`コマンドと`set`コマンドはキーと値を扱う一番単純な方法です｡
+もっとユーザを作り､違ったキーを試し､違った値を入れてみてください｡
 
-### Querying
+### クエリ
 
-As we move forward, two things will become clear. As far as Redis is concerned, keys are everything and values are nothing. Or, put another way, Redis doesn't allow you to query an object's values. Given the above, we can't find the user(s) which live on planet `dune`.
+次に2つのことを明らかにしましょう｡
+ことRedisにおいては､キーが全てであり､値には意味がありません｡
+別の言い方をすれば､Redisでは値についてクエリを投げることはできません｡
+上の例で言えば､惑星`dune`に住むユーザを見つけることはできないのです｡
 
-For many, this is will cause some concern. We've lived in a world where data querying is so flexible and powerful that Redis' approach seems primitive and unpragmatic. Don't let it unsettle you too much. Remember, Redis isn't a one-size-fits-all solution. There'll be things that just don't belong in there (because of the querying limitations). Also, consider that in some cases you'll find new ways to model your data.
+多くの人にとってこれは困ったことに思えるでしょう｡
+我々はデータクエリが非常に柔軟で､非常に強力な世界に住んでいます｡
+そのためRedisのやり方は原始的で実際的ではないように思えるでしょう｡
+しかしなにも心配することはありません｡思い出してください､Redisは万能のソリューションではありません｡
+クエリの制限によってRedisには適さない問題というのもあるのです｡
+また､場合によってはデータをモデリングする別の方法を見つけることもあるでしょう｡
 
-We'll look at more concrete examples as we move on, but it's important that we understand this basic reality of Redis. It helps us understand why values can be anything - Redis never needs to read or understand them. Also, it helps us get our minds thinking about modeling in this new world.
+これからもっと具体的な例を見ていくことにしますが､
+この基本的事実を理解しておくことは重要です｡
+これによって､なぜ値は何でもありなのかが理解できます｡
+なぜならRedisは決して値を読んだり理解したりする必要がないからです｡
+また､この新しい考え方でデータをモデリングする際の助けにもなります｡
 
-### Memory and Persistence
+### メモリと永続化
 
-We mentioned before that Redis is an in-memory persistent store. With respect to persistence, by default, Redis snapshots the database to disk based on how many keys have changed. You configure it so that if X number of keys change, then save the database every Y seconds. By default, Redis will save the database every 60 seconds if 1000 or more keys have changed all the way to 15 minutes if 9 or less keys has changed.
+先ほどRedisはインメモリ パーシスタント ストア だといいました｡
+永続化の点について言えば､デフォルトではRedisは変更されたキーの数に基づいてデータベースのスナップショットをディスクに保存します｡
+X個のキーが変更されたら､Y秒ごとにデータベースを保存するという設定ができます｡
+デフォルトでは1000以上のキーが変更された場合は60秒ごとに､9あるいはそれ以下のキーが変更された場合には15分おきにデータベースを保存します｡
 
-Alternatively (or in addition to snapshotting), Redis can run in append mode. Any time a key changes, an append-only file is updated on disk. In some cases it's acceptable to lose 60 seconds worth of data, in exchange for performance, should there be some hardware or software failure. In some cases such a loss is not acceptable. Redis gives you the option. In chapter 5 we'll see a third option, which is offloading persistence to a slave.
+別の方法として､あるいはスナップショットと併せて､Redisは追加モードで動かすことができます｡キーが追加／変更される度にディスク上のappend-onlyファイルが更新されます｡
+ハードウェアなりソフトウェアなりの障害はつきものです｡パフォーマンスを得るために60秒間のデータを失ってもいいb場合というのはあるでしょう｡
+しかしそのようなデータの喪失が許されないこともあります｡
+Redisではこの2つを選ぶことができます｡第5章では3つ目の選択として永続化作業をスレーブに任せる方法を紹介します｡
 
-With respect to memory, Redis keeps all your data in memory. The obvious implication of this is the cost of running Redis: RAM is still the most expensive part of server hardware.
+メモリに関して言えば､Redisは全てのデータをメモリ上に保持します｡これはRedisを動かすのにはお金がかかるということを意味します｡RAMはいまだにサーバの最も高価なパーツです｡
 
-I do feel that some developers have lost touch with how little space data can take. The Complete Works of William Shakespeare takes roughly 5.5MB of storage. As for scaling, other solutions tend to be IO- or CPU-bound. Which limitation (RAM or IO) will require you to scale out to more machines really depends on the type of data and how you are storing and querying it. Unless you're storing large multimedia files in Redis, the in-memory aspect is probably a non-issue. For apps where it is an issue you'll likely be trading being IO-bound for being memory bound.
+私はデータが取るスペースどれほど少ないものかを理解していない開発者がいると感じます｡
+シェイクスピアの全作品はおおよそ5.5MBです｡
+スケーリングについては､他のソリューションはIOバウンドかCPUバウンドしがちです｡
+RAMかIOの限界によってたくさんのマシンへとスケールアウト必要があるかどうかは､取り扱うデータタイプに強く依存します｡
+もし巨大なマルチメディアファイルをRedisに保存するのでなければ､メモリについてはおそらく問題にはなりません｡
+アプリケーションにとってはメモリバウンドよりもIOバウンドのほうが問題になりがちでしょう｡
 
-Redis did add support for virtual memory. However, this feature has been seen as a failure (by Redis' own developers) and its use has been deprecated.
+Redisはバーチャルメモリをサポートしています｡しかし､この機能はRedisの開発者たちに失敗だとみなされています｡いずれ廃止されることになるでしょう｡
 
-(On a side note, that 5.5MB file of Shakespeare's complete works can be compressed down to roughly 2MB. Redis doesn't do auto-compression but, since it treats values as bytes, there's no reason you can't trade processing time for RAM by compressing/decompressing the data yourself.)
+(付け足しとして､5.5MBのシェイクスピア全集は約2MBに圧縮することができます｡Redisは自動で圧縮を行いませんが､値はバイト列なので､あなた自身がCPU時間を使って圧縮／解凍を行い､RAMを節約できない理由はなにもありません｡)
 
-### Putting It Together
+### ここまでのまとめ
 
 We've touched on a number of high level topics. The last thing I want to do before diving into Redis is bring some of those topics together. Specifically, query limitations, data structures and Redis' way to store data in memory.
 
