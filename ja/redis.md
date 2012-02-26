@@ -207,51 +207,83 @@ Redisはバーチャルメモリをサポートしています｡しかし､こ
 
 ### ここまでのまとめ
 
-We've touched on a number of high level topics. The last thing I want to do before diving into Redis is bring some of those topics together. Specifically, query limitations, data structures and Redis' way to store data in memory.
+ここまで多くの概念について触れてきました｡具体的なRedisの使い方に踏み込む前に一度これらをまとめておきたいと思います｡
+とりわけクエリの制限､データ構造､そしてRedis流メモリへのデータ保存の方法についてです｡
 
-When you add those three things together you end up with something wonderful: speed. Some people think "Of course Redis is fast, everything's in memory." But that's only part of it. The real reason Redis shines versus other solutions is its specialized data structures.
+これら3つを組み合わせると素晴らしい物を得られます｡それは速さです｡
+「そりゃ速いだろうさ､全部メモリ上にあるんだから」と思う人が居るでしょうが､それは速さの一部分にすぎません｡
+Redisが他のデータベースと比較して真に輝くのはその特別なデータ構造によってです｡
 
-How fast? It depends on a lot of things - which commands you are using, the type of data, and so on. But Redis' performance tends to be measured in tens of thousands, or hundreds of thousands of operations **per second**. You can run `redis-benchmark` (which is in the same folder as the `redis-server` and `redis-cli`) to test it out yourself.
+一体どれほど速いのでしょう？それは多くの要因に依ります｡
+使うコマンド､データタイプ､そういったことです｡
+しかしRedisの速度は「一秒に」何万とか､何十万とかの単位で測定されます｡
+これは `redis-benchmark` コマンド(redis-serverやredis-cliと同じフォルダにあります)を実行することでユーザ自身が確認できます｡
 
-I once changed code which used a traditional model to using Redis. A load test I wrote took over 5 minutes to finish using the relational model. It took about 150ms to complete in Redis. You won't always get that sort of massive gain, but it hopefully gives you an idea of what we are talking about
+私はかつてリレーショナルデータベースをRedisに変更したことがあります｡
+RDBでのロードテストには5分以上かかりましたが､Redisでは150ミリ秒で終わりました｡
 
-It's important to understand this aspect of Redis because it impacts how you interact with it. Developers with an SQL background often work at minimizing the number of round trips they make to the database. That's good advice for any system, including Redis. However, given that we are dealing with simpler data structures, we'll sometimes need to hit the Redis server multiple times to achieve our goal. Such data access patterns can feel unnatural at first, but in reality it tends to be an insignificant cost compared to the raw performance we gain.
+このRedisの性質を理解することは重要です｡なぜならそれがRedisの使い方に大きな影響を与えるからです｡
+SQLを使い慣れた開発者はデータベースへの問い合わせをできるだけ少なくしようとします｡
+Redisを含むあらゆるシステムにとってそれはいいアドバイスです｡
+しかしながらよりシンプルなデータ構造を扱う前提に立つと､
+目的を達するために複数回Redisにアクセスする必要が生じることがあります｡
+このようなデータアクセスパターンは最初は不自然に感じられるかもしれません｡
+しかし現実には実際に得られるパフォーマンスに比べるとごく僅かなコストで済むことが多いのです｡
 
-### In This Chapter
+### この章のまとめ
 
-Although we barely got to play with Redis, we did cover a wide range of topics. Don't worry if something isn't crystal clear - like querying. In the next chapter we'll go hands-on and any questions you have will hopefully answer themselves.
+ほとんどRedisそのものには触っていませんが､たくさんの話題について触れました｡
+何かわからないこと､例えばクエリとか､があっても心配しないでください｡
+次の章で実際に手を動かすことで､疑問が氷解することでしょう｡
 
-The important takeaways from this chapter are:
+この章のポイント:
 
-* Keys are strings which identify pieces of data (values)
+* キーはデータ(値)を識別する文字列
 
-* Values are arbitrary byte arrays that Redis doesn't care about
+* 値は任意のバイト列で､Redisはその中身に一切関知しない
 
-* Redis exposes (and is implemented as) five specialized data structures
+* Redisは5つのデータ構造を提供する
 
-* Combined, the above make Redis fast and easy to use, but not suitable for every scenario
-
+* 以上のことから､Redisは高速で容易に扱えるが､全ての課題に最適なわけではない｡
 \clearpage
 
-## Chapter 2 - The Data Structures
+## 第二章 - データ構造
 
-It's time to look at Redis' five data structures. We'll explain what each data structure is, what methods are available and what type of feature/data you'd use it for.
+Redisの5つのデータ構造について見ていきましょう｡
+それぞれのデータ構造について解説し､
+どんなメソッドが利用可能で､
+どんな機能やデータが適するのか見てきます｡
 
-The only Redis constructs we've seen so far are commands, keys and values. So far, nothing about data structures has been concrete. When we used the `set` command, how did Redis know what data structure to use? It turns out that every command is specific to a data structure. For example when you use `set` you are storing the value in a string data structure. When you use `hset` you are storing it in a hash. Given the small size of Redis' vocabulary, it's quite manageable.
+これまでに見てきたRedisの要素はコマンドとキーと値だけでした｡
+データ構造については詳しく触れていません｡
+`set`コマンドを使うときに､Redisはどうやってどのデータ構造を使うか判別するのでしょうか？
+実は全てのコマンドはデータ構造と結びついているのです｡
+たとえば`set`コマンドを使う時､格納される値は文字列です｡
+`hset`コマンドを使うとハッシュとして格納します｡
+Redisのコマンド群に少し馴染めば実に扱いやすくできています｡
 
-**[Redis' website](http://redis.io/commands) has great reference documentation. There's no point in repeating the work they've already done. We'll only cover the most important commands needed to understand the purpose of a data structure.**
+**[Redisのウェブサイト](http://redis.io/commands) には大変良く出来たリファレンスがあります｡
+同じ事を繰り返す必要はないので､データ構造の目的を理解するのに必要な最も重要なコマンドだけを取り上げます｡**
 
-There's nothing more important than having fun and trying things out. You can always erase all the values in your database by entering `flushdb`, so don't be shy and try doing crazy things!
+実際に物事に取り組んで楽しむことほど大事なことはありません｡
+`flushdb`コマンドでいつでもデータベースを全消去できるので､
+ためらわずに思う存分試してみてください｡
 
-### Strings
+### 文字列
 
-Strings are the most basic data structures available in Redis. When you think of a key-value pair, you are thinking of strings. Don't get mixed up by the name, as always, your value can be anything. I prefer to call them "scalars", but maybe that's just me.
+文字列はRedisで一番基本的なデータ構造です｡
+一般にキーと値のペアというと文字列のことを思い浮かべるでしょう｡
+しかし名前に惑わされないでください､値は何だっていいのです｡
+私はそれらをスカラー値と呼ぶのが好きですが､たぶんこれは私だけでしょう｡
 
-We already saw a common use-case for strings, storing instances of objects by key. This is something that you'll make heavy use of:
+文字列の使い方については既に見ました｡オブジェクトのインスタンスをキーによって保存します｡
+次のような使い方を頻繁にすることでしょう：
 
 	set users:leto "{name: leto, planet: dune, likes: [spice]}"
 
-Additionally, Redis lets you do some common operations. For example `strlen <key>` can be used to get the length of a key's value; `getrange <key> <start> <end>` returns the specified range of a value; `append <key> <value>` appends the value to the existing value (or creates it if it doesn't exist already). Go ahead and try those out. This is what I get:
+加えて､いくつかありふれた操作も行えます｡たとえば `strlen <key>` とすると､キーが示す値の長さを得られます｡`getrange <key> <start> <end>` は値の指定した範囲を返します｡
+`append <key>` は既にあるキーに値を追加するか､キーが存在しなければ新しく作成して追加します｡
+実際にやってみて下さい｡次のような結果になります：
 
 	> strlen users:leto
 	(integer) 42
@@ -262,9 +294,14 @@ Additionally, Redis lets you do some common operations. For example `strlen <key
 	> append users:leto " OVER 9000!!"
 	(integer) 54
 
-Now, you might be thinking, that's great, but it doesn't make sense. You can't meaningfully pull a range out of JSON or append a value. You are right, the lesson here is that some of the commands, especially with the string data structure, only make sense given specific type of data.
+さて､あなたはこれを見て「なるほどわかった､しかしこんなのは意味がない」と考えているのではないでしょうか｡
+JSONから範囲指定で値を取り出したり､値を追加したりすることには意味がありません｡ここでは文字列に限ったコマンドを実行する練習をしているだけです｡とうぜん文字列を扱う場合にしか意味がありません｡
 
-Earlier we learnt that Redis doesn't care about your values. Most of the time that's true. However, a few string commands are specific to some types or structure of values. As a vague example, I could see the above `append` and `getrange` commands being useful in some custom space-efficient serialization. As a more concrete example I give you the `incr`, `incrby`, `decr` and `decrby` commands. These increment or decrement the value of a string:
+先ほどRedisは値について関知しないといいました｡
+大抵の場合はそれは本当のことですが､幾つかもの文字列コマンドは値や構造に特化しています｡
+漠然とした例ですが､`append`とか`getrange`とかは効率のいい知り荒いぜーションをするのに便利です｡
+より具体的な例としては`incr` `incrby` `decr` `decrby` コマンドがあります｡
+これらは文字列の値を増やしたり減らしたりします｡
 
 	> incr stats:page:about
 	(integer) 1
@@ -276,20 +313,32 @@ Earlier we learnt that Redis doesn't care about your values. Most of the time th
 	> incrby ratings:video:12333 3
 	(integer) 8
 
-As you can imagine, Redis strings are great for analytics. Try incrementing `users:leto` (a non-integer value) and see what happens (you should get an error).
+ご想像のとおり､Redisの文字列は分析に大変役に立ちます｡
+試しに整数値ではない `users:leto` をインクリメント仕様としてみてください､エラーになるはずです｡
 
-A more advanced example is the `setbit` and `getbit` commands. There's a [wonderful post](http://blog.getspool.com/2011/11/29/fast-easy-realtime-metrics-using-redis-bitmaps/) on how Spool uses these two commands to efficiently answer the question "how many unique visitors did we have today". For 128 million users a laptop generates the answer in less than 50ms and takes only 16MB of memory.
+より進んだ例として `setbit` `getbit` コマンドがあります｡
+[素晴らしい解説](http://blog.getspool.com/2011/11/29/fast-easy-realtime-metrics-using-redis-bitmaps/)
+があります｡Spoolがこれらのコマンドを使ってどれほど効率的に一日のユニークビジター数を計算しているかの例です｡
+1億2800万ユーザを一台のラップトップで､50ミリ秒と16MBのメモリで処理しています｡
 
-It isn't important that you understand how bitmaps work, or how Spool uses them, but rather to understand that Redis strings are more powerful than they initially seem. Still, the most common cases are the ones we gave above: storing objects (complex or not) and counters. Also, since getting a value by key is so fast, strings are often used to cache data.
+ビットマップの仕組みを理解することは重要ではありません｡
+同様にSpoolがどんなふうに使っているかというのも重要ではありません｡しかし
+Redisの文字列が見た目よりずっと強力だということは理解する必要があります｡
+しかし最も一般的な使われれ方は上に上げたようなオブジェクトを格納するとか､カウンターを作るとか､そういったことです｡
+またキーから値を得るのは大変速いので､文字列はよくキャッシュに使われます｡
 
-### Hashes
+### ハッシュ
 
-Hashes are a good example of why calling Redis a key-value store isn't quite accurate. You see, in a lot of ways, hashes are like strings. The important difference is that they provide an extra level of indirection: a field. Therefore, the hash equivalents of `set` and `get` are:
+なぜRedisが単なるキーバリューストアではないのか､その好例がハッシュです｡
+多くの点でハッシュは文字列と似通っています｡重要な違いはキーと値の間に追加要素があることです｡
+それはフィールドです｡
+したがって､ハッシュにおける `set` `get` は次のようになります：
 
 	hset users:goku powerlevel 9000
 	hget users:goku powerlevel
 
-We can also set multiple fields at once, get multiple fields at once, get all fields and values, list all the fields or delete a specific field:
+複数のフィールドを一度に設定したり､取得したりすることもできます｡
+全てのフィールドを表示したり､特定のフィールドを削除するには次のようにします：
 
 	hmset users:goku race saiyan age 737
 	hmget users:goku race powerlevel
@@ -297,25 +346,40 @@ We can also set multiple fields at once, get multiple fields at once, get all fi
 	hkeys users:goku
 	hdel users:goku age
 
-As you can see, hashes give us a bit more control over plain strings. Rather than storing a user as a single serialized value, we could use a hash to get a more accurate representation. The benefit would be the ability to pull and update/delete specific pieces of data, without having to get or write the entire value.
+見てわかるように､ハッシュは単なる文字列より扱いやすくなっています｡
+ユーザ情報をシリアライズされた文字列として保存するより､ハッシュで保存したほうが理解が容易です｡
+利点は値全部を読み書きするのではなく､値の特定の部分を取り出したり更新したり削除したりできることです｡
 
-Looking at hashes from the perspective of a well-defined object, such as a user, is key to understanding how they work. And it's true that, for performance reasons, more granular control might be useful. However, in the next chapter we'll look at how hashes can be used to organize your data and make querying more practical. In my opinion, this is where hashes really shine.
+具体的なモデル､例えばユーザ情報とかを使ってハッシュを見ることが理解の鍵です｡
+そしてパフォーマンスの観点から､より細かなコントロールが有益です｡
+しかし次の章ではデータ構造化やクエリを行うのにハッシュをどのように利用できるのか見て行きます｡
+個人的にはハッシュが最もその効果を発揮する場面です｡
 
-### Lists
 
-Lists let you store and manipulate an array of values for a given key. You can add values to the list, get the first or last value and manipulate values at a given index. Lists maintain their order and have efficient index-based operations. We could have a `newusers` list which tracks the newest registered users to our site:
+### リスト
+
+リストはキーに対して値の配列を格納します｡
+リストに対して値を追加し､最初や最後の値を取得し､インデックスを使ってリスト内の値を操作できます｡
+リストは内部に順序を保持しており､効率の良いインデックスベースの操作が可能です｡
+`newusers`リストを使って新しくサイトに登録したユーザを追跡できます：
 
 	lpush newusers goku
 	ltrim newusers 0 50
 
-First we push a new user at the front of the list, then we trim it so that it only contains the last 50 users. This is a common pattern. `ltrim` is an O(N) operation, where N is the number of values we are removing. In this case, where we always trim after a single insert, it'll actually have a constant performance of O(1) (because N will always be equal to 1).
+まず新しいユーザをリストの先頭に追加します｡
+次に最後の50ユーザだけを残して他を削除しています｡
+これが一般的なパターンです｡
+`ltrim`はO(N)操作です｡Nは削除する要素の数です｡
+この例の場合､一回の追加の後にトリムします｡したがって常にO(1)の時間がかかることになります｡
 
-This is also the first time that we are seeing a value in one key referencing a value in another. If we wanted to get the details of the last 10 users, we'd do the following combination:
+
+次はあるキーの値を元に別のキーの値を参照するという初めての例です｡
+もし最新10ユーザの詳細が知りたければ､次の操作の組み合わせで可能です：
 
 	keys = redis.lrange('newusers', 0, 10)
 	redis.mget(*keys.map {|u| "users:#{u}"})
 
-The above is a bit of Ruby which shows the type of multiple roundtrips we talked about before.
+このコードはRubyの例です｡以前述べた複数回の問い合わせを行っています｡
 
 Of course, lists aren't only good for storing references to other keys. The values can be anything. You could use lists to store logs or track the path a user is taking through a site. If you were building a game, you might use it to track a queued user actions.
 
