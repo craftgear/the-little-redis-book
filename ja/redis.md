@@ -621,65 +621,66 @@ Redisには何百万ものキーを保存できるとはいえ､先程の例は
 
 Redisを初めて起動したとき､`redis.conf`ファイルがないという警告が表示さました｡このファイルはRedisの様々な設定をするのに使います｡詳しいコメント付きの `redis.conf` ファイルがRedisの各リリースに含まれています｡サンプルにはデフォルトの設定が書いてあるので､設定の意味とデフォルト値を知るのに便利です｡このファイルは <https://github.com/antirez/redis/raw/2.4.6/redis.conf> にあります｡
 
-**この設定ファイルはRedis 2.4.6のものです｡**
-**This is the config file for Redis 2.4.6. You should replace "2.4.6" in the above URL with your version. You can find your version by running the `info` command and looking at the first value.**
+**この設定ファイルはRedis 2.4.6のものです｡URLの"2.4.6"をお使いのバージョンに置き換えてください｡バージョンは`info`コマンドで確認できます｡**
 
-Since the file is well-documented, we won't be going over the settings.
+ファイル内に詳細なコメントがあるので､ここでは設定については触れません｡
 
-In addition to configuring Redis via the `redis.conf` file, the `config set` command can be used to set individual values. In fact, we already used it when setting the `slowlog-log-slower-than` setting to 0.
+`redis.conf`ファイルで設定をするのに加えて､`config set`コマンドで個々の値を設定できます｡実は先程使った`slowlog-log-slower-than`を0にしたのはこれでした｡
 
-There's also the `config get` command which displays the value of a setting. This command supports pattern matching. So if we want to display everything related to logging, we can do:
+`config get`というコマンドもあって､設定値を表示します｡このコマンドはパターンマッチをサポートしており､例えばログ関連の設定を全部表示したいなら:
 
 	config get *log*
 
-### Authentication
+とすることができます｡
 
-Redis can be configured to require a password. This is done via the `requirepass` setting (set through either the `redis.conf` file or the `config set` command). When `requirepass` is set to a value (which is the password to use), clients will need to issue an `auth password` command.
+### 認証
 
-Once a client is authenticated, they can issue any command against any database. This includes the `flushall` command which erases every key from every database. Through the configuration, you can rename commands to achieve some security through obfuscation:
+Redisがパスワードを要求するよう設定できます｡`requirepass`にパスワードを設定することでこの機能が有効になります｡クライアントは`auth password`コマンドを発行して認証を行う必要があります｡
+
+一旦クライアントが認証を済ませると､全てのキーをデータベースから削除する`flashall`コマンドもふくんだ､あらゆるコマンドが実行可能になります｡次に示すようにコマンド名を変更して難読化することでセキュリティを高めることができます:
 
 	rename-command CONFIG 5ec4db169f9d4dddacbfb0c26ea7e5ef
 	rename-command FLUSHALL 1041285018a942a4922cbf76623b741e
 
-Or you can disable a command by setting the new name to an empty string.
+新しい名前を空文字列にするとコマンドは使えなくなります｡
 
-### Size Limitations
+### サイズの限界
 
-As you start using Redis, you might wonder "how many keys can I have?" You might also wonder how many fields can a hash have (especially when you use it to organize your data), or how many elements can lists and sets have? Per instance, the practical limits for all of these is in the hundreds of millions.
+Redisを使い始めると､「いくつのキーを保存できるんだろう？」と考えることでしょう｡あるいはハッシュにはどれだけのフィールドを格納できるのか､リストや集合はどれだけの要素を持てるのか､といったことも気になるかもしれません｡現実的にはこれらの限界は何億という数値です｡
 
 
-### Replication
+### レプリケーション
 
-Redis supports replication, which means that as you write to one Redis instance (the master), one or more other instances (the slaves) are kept up-to-date by the master. To configure a slave you use either the `slaveof` configuration setting or the `slaveof` command (instances running without this configuration are or can be masters).
+Redisはレプリケーションをサポートしています｡マスターのRedisインスタンスにデータを書き込むと､一つかそれ以上のスレーブインスタンがマスターの更新に追従するという機能です｡スレーブの設定は設定ファイルの`slaveof`値か､`slaveof`コマンドで行えます｡この設定なしで実行されるインスタンスはマスターになりえます｡
 
-Replication helps protect your data by copying to different servers. Replication can also be used to improve performance since reads can be sent to slaves. They might respond with slightly out of date data, but for most apps that's a worthwhile tradeoff.
+レプリケーションはデータを複数のサーバにコピーすることでデータを保護するのに役立ちます｡データの読み出しをスレーブに任せることでパフォーマンスの改善にも使えます｡これはわずかに古くなったデータを返す可能性がありますが､ほとんどのアプリケーションにとっては許容できる代償でしょう｡
 
-Unfortunately, Redis replication doesn't yet provide automated failover. If the master dies, a slave needs to be manually promoted. Traditional high-availability tools that use heartbeat monitoring and scripts to automate the switch are currently a necessary headache if you want to achieve some sort of high availability with Redis.
+残念なことに､Redisのレプリケーションは自動フェイルオーバーに対応していません｡マスターが落ちたら､スレーブを手動でマスターに昇格させなければなりません｡Redisで高可用性を実現しようとするなら､広く使われている生存監視を使った高可用性ツールやスレーブを自動で切り替えるスクリプトを利用する手間が必要です｡
 
-### Backups
+### バックアップ
 
-Backing up Redis is simply a matter of copying Redis' snapshot to whatever location you want (S3, FTP, ...). By default Redis saves its snapshop to a file named `dump.rdb`. At any point in time, you can simply `scp`, `ftp` or `cp` (or anything else) this file.
+Redisのバックアップはスナップショットファイルをどこでも好きなところにコピーするだけです｡デフォルトではRedisはスナップショットを`dump.rdb`という名前のファイルに保存します｡いつの時点でもこのファイルを`scp` `ftp` `cp`することできます｡
 
-It isn't uncommon to disable both snapshotting and the append-only file (aof) on the master and let a slave take care of this. This helps reduce the load on the master and lets you set more aggressive saving parameters on the slave without hurting overall system responsiveness.
+スナップショットとアペンドオンリーファイル(aof)の両方を無効にして､スレーブにこれらの役割を任せてしまうのは珍しいことではありません｡これによって全体のシステムのパフォーマンスを損なうこと無く､マスターの負荷が減り､スレーブで高頻度で保存を行えます｡
 
-### Scaling and Redis Cluster
+### スケールアウトとRedisクラスタ
 
-Replication is the first tool a growing site can leverage. Some commands are more expensive than others (`sort` for example) and offloading their execution to a slave can keep the overall system responsive to incoming queries.
+レプリケーションはサイトの負荷増大に伴って使える最初の手段です｡コマンドの中には実行に高いコストのかかるものがあり（例えば`sort`など）､高いったコマンドの実行をスレーブに任せることで全体の応答性を高く保つことができます｡
 
-Beyond this, truly scaling Redis comes down to distributing your keys across multiple Redis instances (which could be running on the same box, remember, Redis is single-threaded). For the time being, this is something you'll need to take care of (although a number of Redis drivers do provide consistent-hashing algorithms). Thinking about your data in terms of horizontal distribution isn't something we can cover in this book. It's also something you probably won't have to worry about for a while, but it's something you'll need to be aware of regardless of what solution you use.
+レプリケーションのさらに先､Redisで本当のスケールアウトをするには､キーを複数のインスタンス(これらは一つのサーバで実行され得るでしょう｡思い出してください､Redisはシングルスレッドなのです)分散配置するということになります｡現在のところ､この機能は自分で何とかする必要があります(多くのRedisドライバは一貫性を保ったハッシュアルゴリズムを提供していますが)｡データの水平分散はこの本で扱う内容をこえています｡またしばらくの間はそんな心配も必要ないでしょう｡しかしこの話題はどんな解決法を採るにしろ､気がついていなければならないことです｡
 
-The good news is that work is under way on Redis Cluster. Not only will this offer horizontal scaling, including rebalancing, but it'll also provide automated failover for high availability.
+ここで良いお知らせです｡Redis Clusterが現在開発中で､この機能はデータの水平分散を可能にするだけでなく､ロードバランス機能や自動フェイルオーバー機能も含んでいます｡
 
-High availability and scaling is something that can be achieved today, as long as you are willing to put the time and effort into it. Moving forward, Redis Cluster should make things much easier.
+高可用性とスケールアウトは手間暇を惜しまなければ現状でも十分に実現可能です｡将来的にはRedis Clusterがもっと話を簡単にしてくれるでしょう｡
 
-### In This Chapter
+### この章のまとめ
 
-Given the number of projects and sites using Redis already, there can be no doubt that Redis is production-ready, and has been for a while. However, some of the tooling, especially around security and availability is still young. Redis Cluster, which we'll hopefully see soon, should help address some of the current management challenges.
+既にRedisを利用しているサイトやプロジェクトの数を考えると､Redisを実戦投入できるということには疑いの余地はありません｡しかしセキュリティや可用性のツールについてはまだ未成熟です｡期待の高まるRedis Clusterが管理業務の課題を解決してくれるはずです｡
 
 \clearpage
 
-## Conclusion
+## 結論
 
-In a lot of ways, Redis represents a simplification in the way we deal with data. It peels away much of the complexity and abstraction available in other systems. In many cases this makes Redis the wrong choice. In others it can feel like Redis was custom-built for your data.
+様々な点において､Redisはデータを扱う方法の単純化を示しています｡他のやり方にあるような複雑さや抽象化は､そこにはありません｡多くの場合､これがRedisを間違った選択にします｡その他の場合は､Redisはあつらえたようにぴったりだと感じられるでしょう｡
 
-Ultimately it comes back to something I said at the very start: Redis is easy to learn. There are many new technologies and it can be hard to figure out what's worth investing time into learning. When you consider the real benefits Redis has to offer with its simplicity, I sincerely believe that it's one of the best investments, in terms of learning, that you and your team can make.
+結局は私がこの本の最初に述べたことに戻ってくるのです｡Redisは簡単に学べます｡新技術は数あれど､学ぶに値するかどうかを知ることすら難しいことがあります｡Redisの単純さによってもたらされる真の利点を考えると､あなたとあなたのチームにとって､Redisを学ぶのは良い投資だと私は心から信じています｡
