@@ -90,6 +90,7 @@ If we were to apply this data structure concept to the relational world, we coul
 
 Using specific data structures for specific problems? Isn't that how we code? You don't use a hashtable for every piece of data, nor do you use a scalar variable. To me, that defines Redis' approach. If you are dealing with scalars, lists, hashes, or sets, why not store them as scalars, lists, hashes and sets? Why should checking for the existence of a value be any more complex than calling `exists(key)` or slower than O(1) (constant time lookup which won't slow down regardless of how many items there are)?
 
+>>> FROM HERE
 # The Building Blocks
 
 ## Databases
